@@ -121,7 +121,12 @@ public class Controller implements Runnable {
 
 
         long totalArrivalRate = 0;
-        long temptotalArrivalRate =0;
+
+        double currentPartitionArrivalRate=0;
+        Map<Integer, Double> previousPartitionArrivalRate = new HashMap<>();
+        for (TopicPartitionInfo p : td.partitions()) {
+            previousPartitionArrivalRate.put(p.partition(), 0.0);
+        }
 
         for (TopicPartitionInfo p : td.partitions()) {
             TopicPartition t = new TopicPartition(topic, p.partition());
@@ -130,31 +135,27 @@ public class Controller implements Runnable {
             long timeoffset2 = timestampOffsets2.get(t).offset();
 
 
-           // log.info(" latestoffset {}, timeoffset2 {}", timeoffset1, timeoffset2);
+            if(timeoffset2 == -1){
+                timeoffset2 = latestOffset;
+            }
+            if(timeoffset1 == - 1) {
+                 // NOT very critical condition
+                currentPartitionArrivalRate = previousPartitionArrivalRate.get(p.partition());
+                log.info("Arrival rate into partition {} is {}", t.partition(), currentPartitionArrivalRate);
 
+            } else {
+                currentPartitionArrivalRate = (double) (timeoffset2 - timeoffset1) / doublesleep;
+                log.info(" timeoffset1 {}, timeoffset2 {}", timeoffset1, timeoffset2);
+                log.info("Arrival rate into partition {} is {}", t.partition(), currentPartitionArrivalRate);
+            }
+            //TODO add a condition for when both offsets timeoffset2 and timeoffset1 do not exist, i.e., are -1,
+            previousPartitionArrivalRate.put(p.partition(), currentPartitionArrivalRate);
 
-
-            log.info(" timeoffset1 {}, timeoffset2 {}", timeoffset1, timeoffset2);
-
-
-            log.info("Arrival rate into partition {} is {}", t.partition(), (double)(timeoffset2-timeoffset1)/doublesleep);
-
-
-
-            long committedoffset = committedOffsets.get(t).offset();
-
-
-            totalArrivalRate += (double)(timeoffset2 -timeoffset1)/doublesleep;
-
-
-
-
-
+            totalArrivalRate += currentPartitionArrivalRate;
 
         }
+        log.info("totalArrivalRate {}",    totalArrivalRate);
 
-
-        log.info("totalArrivalRate {}",             totalArrivalRate);
 
 
         if (!firstIteration) {
