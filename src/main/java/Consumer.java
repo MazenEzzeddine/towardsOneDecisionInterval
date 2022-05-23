@@ -8,23 +8,20 @@ public class Consumer {
     private List<Partition> assignedPartitions;
     private final double arrivalCapacity;
     private Long remainingLagCapacity;
+    private int id;
 
     public int getId() {
         return id;
     }
 
-    private int id;
-
     public Consumer(int id, Long lagCapacity, double arrivalCapacity) {
         this.lagCapacity = lagCapacity;
         this.arrivalCapacity = arrivalCapacity;
         this.id=id;
-
         this.remainingLagCapacity = lagCapacity;
         this.remainingArrivalCapacity = arrivalCapacity;
         assignedPartitions = new ArrayList<>();
     }
-
 
 
     public Long getRemainingLagCapacity() {
@@ -42,16 +39,12 @@ public class Consumer {
         this.assignedPartitions = assignedPartitions;
     }
 
-
-
     public double getRemainingArrivalCapacity() {
         return remainingArrivalCapacity;
     }
-
     public void setRemainingArrivalCapacity(double remainingArrivalCapacity) {
         this.remainingArrivalCapacity = remainingArrivalCapacity;
     }
-
 
     //TODO attention to when bin packing using average arrival rates or average lag
     //TODO set remaining capacities accordingly

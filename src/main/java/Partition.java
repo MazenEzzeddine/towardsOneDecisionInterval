@@ -44,7 +44,6 @@ public class Partition implements Comparable<Partition> {
     public double[] getArrivalRateWindow() {
         return arrivalRateWindow;
     }
-
     public void setArrivalRateWindow(double[] arrivalRateWindow) {
         this.arrivalRateWindow = arrivalRateWindow;
     }
@@ -56,9 +55,7 @@ public class Partition implements Comparable<Partition> {
     // TODO and window for the lag rate d/dt (lag)
     private double[] arrivalRateWindow = new double[4];
     private Long[] lagWindow = new Long[4];
-
     private double[] rateForarrivalRateWindow = new double[4];
-
     private double[] rateForLagWindow = new double[4];
 
 
@@ -66,15 +63,12 @@ public class Partition implements Comparable<Partition> {
     public Long getCurrentLastOffset() {
         return currentLastOffset;
     }
-
     public void setCurrentLastOffset(Long currentLastOffset) {
         this.currentLastOffset = currentLastOffset;
     }
-
     public Long getPreviousLastOffset() {
         return previousLastOffset;
     }
-
     public void setPreviousLastOffset(Long previousLastOffset) {
         this.previousLastOffset = previousLastOffset;
     }
@@ -90,10 +84,8 @@ public class Partition implements Comparable<Partition> {
             //offsetWindow[i] = 0L;
             arrivalRateWindow[i] = 0.0;
             lagWindow[i]=0L;
-
             rateForarrivalRateWindow[i] = 0.0;
             rateForLagWindow[i]=0.0;
-
         }
     }
 
@@ -135,10 +127,8 @@ public class Partition implements Comparable<Partition> {
             lagWindow[i+1] = lagWindow[i];
             rateForLagWindow[i+1] =rateForLagWindow[i];
         }
-
         lagWindow[0] = lag;
         rateForLagWindow[0] = (double)(lagWindow[0]-lagWindow[1])/Controller.doublesleep;
-
     }
 
     public double getArrivalRate() {
