@@ -179,9 +179,7 @@ public class Controller implements Runnable {
             log.info("Consumers are less than nb partition we can scale");
 
             try (final KubernetesClient k8s = new DefaultKubernetesClient()) {
-                ServiceAccount fabric8 = new ServiceAccountBuilder().withNewMetadata().withName("fabric8").endMetadata().build();
-                // is that necessary
-                k8s.serviceAccounts().inNamespace("default").createOrReplace(fabric8);
+
                 k8s.apps().deployments().inNamespace("default").withName("cons1persec").scale(size + 1);
 
 
@@ -204,8 +202,7 @@ public class Controller implements Runnable {
             try (final KubernetesClient k8s = new DefaultKubernetesClient()) {
 
                 // is that necessary
-                ServiceAccount fabric8 = new ServiceAccountBuilder().withNewMetadata().withName("fabric8").endMetadata().build();
-                k8s.serviceAccounts().inNamespace("default").createOrReplace(fabric8);
+
                 int replicas = k8s.apps().deployments().inNamespace("default").withName("cons1persec").get().getSpec().getReplicas();
                 if (replicas > 1) {
                     k8s.apps().deployments().inNamespace("default").withName("cons1persec").scale(replicas - 1);
