@@ -64,10 +64,8 @@ public class Controller implements Runnable {
         admin = AdminClient.create(props);
         tdr = admin.describeTopics(Collections.singletonList(topic));
         td = tdr.values().get(topic).get();
-
         lastScaleUpDecision = Instant.now();
         lastScaleDownDecision = Instant.now();
-
 
         for (TopicPartitionInfo p : td.partitions()) {
             partitions.add(new Partition(p.partition(), 0, 0));
@@ -85,22 +83,18 @@ public class Controller implements Runnable {
         Map<TopicPartition, OffsetSpec> requestTimestampOffsets2 = new HashMap<>();
 
 
-        // log.info("Date(System.currentTimeMillis()) {}",new Date(System.currentTimeMillis()));
         for (TopicPartitionInfo p : td.partitions()) {
-            requestLatestOffsets.put(new TopicPartition(topic, p.partition()), OffsetSpec.latest());
-           /* requestTimestampOffsets2.put(new TopicPartition(topic, p.partition()),
-           OffsetSpec.forTimestamp(Instant.now().minusMillis(1100).toEpochMilli()));
-            requestTimestampOffsets1.put(new TopicPartition(topic, p.partition()),
-             OffsetSpec.forTimestamp(Instant.now().minusMillis(sleep + 1100).toEpochMilli()));*/
+            requestLatestOffsets.put(new TopicPartition(topic, p.partition()),
+                    OffsetSpec.latest());
             requestTimestampOffsets2.put(new TopicPartition(topic, p.partition()),
-                    OffsetSpec.forTimestamp(Instant.now().minusMillis(1500).toEpochMilli()));
+                    OffsetSpec.forTimestamp(Instant.now().minusMillis(1700).toEpochMilli()));
             requestTimestampOffsets1.put(new TopicPartition(topic, p.partition()),
-                    OffsetSpec.forTimestamp(Instant.now().minusMillis(sleep + 1500).toEpochMilli()));
+                    OffsetSpec.forTimestamp(Instant.now().minusMillis(sleep + 1700).toEpochMilli()));
         }
+
 
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> latestOffsets =
                 admin.listOffsets(requestLatestOffsets).all().get();
-
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> timestampOffsets1 =
                 admin.listOffsets(requestTimestampOffsets1).all().get();
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> timestampOffsets2 =
@@ -108,7 +102,7 @@ public class Controller implements Runnable {
 
 
         long totalArrivalRate = 0;
-        double currentPartitionArrivalRate = 0;
+        double currentPartitionArrivalRate;
         Map<Integer, Double> previousPartitionArrivalRate = new HashMap<>();
         for (TopicPartitionInfo p : td.partitions()) {
             previousPartitionArrivalRate.put(p.partition(), 0.0);
@@ -127,7 +121,6 @@ public class Controller implements Runnable {
                 // NOT very critical condition
                 currentPartitionArrivalRate = previousPartitionArrivalRate.get(p.partition());
                 log.info("Arrival rate into partition {} is {}", t.partition(), currentPartitionArrivalRate);
-
             } else {
                 currentPartitionArrivalRate = (double) (timeoffset2 - timeoffset1) / doublesleep;
                 log.info(" timeoffset1 {}, timeoffset2 {}", timeoffset1, timeoffset2);
@@ -136,8 +129,8 @@ public class Controller implements Runnable {
             //TODO add a condition for when both offsets timeoffset2 and timeoffset1 do not exist, i.e., are -1,
             previousPartitionArrivalRate.put(p.partition(), currentPartitionArrivalRate);
             totalArrivalRate += currentPartitionArrivalRate;
-
         }
+
         log.info("totalArrivalRate {}", totalArrivalRate);
 
 
@@ -195,14 +188,11 @@ public class Controller implements Runnable {
 
     private static void downScaleLogic(double totalArrivalRate, int size) {
         if ((totalArrivalRate < (size - 1) * poll) && totalArrivalRate != 0) {
-
             log.info("since  arrival rate {} is lower than maximum consumption rate " +
                             " with size - 1  I down scaled  by one {}",
-                    totalArrivalRate * 1000, size * poll);
+                    totalArrivalRate, size * poll);
             try (final KubernetesClient k8s = new DefaultKubernetesClient()) {
-
                 // is that necessary
-
                 int replicas = k8s.apps().deployments().inNamespace("default").withName("cons1persec").get().getSpec().getReplicas();
                 if (replicas > 1) {
                     k8s.apps().deployments().inNamespace("default").withName("cons1persec").scale(replicas - 1);
@@ -230,7 +220,6 @@ public class Controller implements Runnable {
         }
         lastUpScaleDecision = Instant.now();
         lastDownScaleDecision = Instant.now();
-
         doublesleep = (double) sleep / 1000.0;
 
 
@@ -244,6 +233,8 @@ public class Controller implements Runnable {
                 e.printStackTrace();
             }
             log.info("Sleeping for {} seconds", doublesleep);
+            log.info("End Iteration;");
+            log.info("=============================================");
             try {
                 Thread.sleep(sleep);
             } catch (InterruptedException e) {
@@ -251,8 +242,6 @@ public class Controller implements Runnable {
             }
 
 
-            log.info("End Iteration;");
-            log.info("=============================================");
         }
     }
 }
